@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação & Simulador: Volumetria Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Configuração do Chart.js para responsividade total */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+        
+        /* Paleta Stone (Base) + Orange (Ação) + Slate (Texto Técnico) */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #fafaf9; /* stone-50 */
+            color: #1c1917; /* stone-900 */
+        }
+
+        /* Classes Utilitárias Customizadas */
+        .nav-link {
+            position: relative;
+            color: #57534e; /* stone-600 */
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-link:hover { color: #ea580c; /* orange-600 */ }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: #ea580c;
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        .card {
+            background-color: white;
+            border: 1px solid #e7e5e4; /* stone-200 */
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .code-block {
+            background-color: #1c1917; /* stone-900 */
+            color: #d6d3d1; /* stone-300 */
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-field {
+            width: 100%;
+            background-color: #fff;
+            border: 1px solid #d6d3d1;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #ea580c;
+            box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+        }
+
+        .btn-primary {
+            background-color: #ea580c;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-primary:hover { background-color: #c2410c; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-stone-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🛡️</span>
+                    <span class="font-bold text-xl text-stone-800 tracking-tight">DataQuality<span class="text-orange-600">.ai</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#overview" class="nav-link">Visão Geral</a>
+                    <a href="#concepts" class="nav-link">Conceitos</a>
+                    <a href="#logic" class="nav-link">Lógica "Auto"</a>
+                    <a href="#simulator" class="nav-link text-orange-600">Simulador</a>
+                    <a href="#implementation" class="nav-link">Guia Técnico</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-stone-100 border-b border-stone-200 py-16">
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-stone-900 mb-6">
+                Volumetria Inteligente <span class="text-orange-600">&</span> Adaptativa
+            </h1>
+            <p class="text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
+                Documentação oficial da função <code>exec_query_anomalia_volumetria</code>. 
+                Uma abordagem estatística que elimina a manutenção manual de regras de Data Quality, adaptando-se a sazonalidade e ignorando outliers automaticamente.
+            </p>
+            <div class="mt-8 flex justify-center gap-4">
+                <a href="#simulator" class="btn-primary shadow-lg hover:shadow-xl transform transition hover:-translate-y-1">
+                    Abrir Simulador
+                </a>
+                <a href="#implementation" class="px-6 py-2 bg-white text-stone-700 border border-stone-300 rounded-md font-medium hover:bg-stone-50 transition">
+                    Ver Código JSON
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-20">
+
+        <!-- 1. VISÃO GERAL (Cards) -->
+        <section id="overview">
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="card p-8 border-l-4 border-l-red-500">
+                    <h3 class="text-xl font-bold text-stone-900 mb-3 flex items-center gap-2">
+                        ❌ O Problema das Regras Estáticas
+                    </h3>
+                    <p class="text-stone-600 mb-4">
+                        Definir <em>"min=1000, max=2000"</em> falha quando a empresa cresce. 
+                        Definir <em>"Média Simples"</em> falha quando um erro passado (0 linhas ou duplicação) contamina o cálculo, aceitando erros futuros.
+                    </p>
+                </div>
+                <div class="card p-8 border-l-4 border-l-green-500">
+                    <h3 class="text-xl font-bold text-stone-900 mb-3 flex items-center gap-2">
+                        ✅ A Solução Dinâmica
+                    </h3>
+                    <p class="text-stone-600 mb-4">
+                        O algoritmo analisa o histórico, detecta se os dados são estáveis ou caóticos, e escolhe a melhor matemática (Média vs. Mediana) para definir limites seguros para hoje.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-stone-200">
+
+        <!-- 2. CONCEITOS (Dev Track) -->
+        <section id="concepts">
+            <div class="mb-8">
+                <span class="text-orange-600 font-bold tracking-wider uppercase text-xs">Conceitos Fundamentais</span>
+                <h2 class="text-3xl font-bold text-stone-900 mt-2">Dicionário Estatístico Simplificado</h2>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="card p-6 text-center">
+                    <div class="text-4xl mb-4">⚖️</div>
+                    <h4 class="font-bold text-lg text-stone-900">Média</h4>
+                    <p class="text-sm text-stone-500 mt-2">Soma tudo e divide. Ótima para dados limpos, mas sensível a erros extremos.</p>
+                </div>
+                <div class="card p-6 text-center bg-orange-50 border-orange-200">
+                    <div class="text-4xl mb-4">🛡️</div>
+                    <h4 class="font-bold text-lg text-stone-900">Mediana</h4>
+                    <p class="text-sm text-stone-600 mt-2">O valor do meio. <strong>Ignora outliers</strong>. Se o histórico tiver um erro gigante, a mediana nem sente.</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-4xl mb-4">📊</div>
+                    <h4 class="font-bold text-lg text-stone-900">Desvio Padrão</h4>
+                    <p class="text-sm text-stone-500 mt-2">Mede a "bagunça". Se os dados variam muito dia a dia, o desvio é alto e a régua abre.</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-4xl mb-4">📏</div>
+                    <h4 class="font-bold text-lg text-stone-900">MAD</h4>
+                    <p class="text-sm text-stone-500 mt-2">Median Absolute Deviation. É o "Desvio Padrão Robusto". Ignora a sujeira para medir a variação.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. LÓGICA AUTO (DS Track) -->
+        <section id="logic" class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+            <div class="grid lg:grid-cols-2">
+                <!-- Visual Flow -->
+                <div class="p-8 bg-stone-50 border-r border-stone-100">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-6">🧠 O Cérebro "Auto"</h3>
+                    <div class="space-y-6 relative">
+                        <!-- Connecting Line -->
+                        <div class="absolute left-4 top-4 bottom-4 w-0.5 bg-stone-200"></div>
+
+                        <!-- Step 1 -->
+                        <div class="relative pl-12">
+                            <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-600 z-10">1</div>
+                            <h4 class="font-bold text-stone-900">Verificação de Amostra</h4>
+                            <p class="text-sm text-stone-600 mt-1">Temos menos de 6 registros?</p>
+                            <div class="mt-2 flex gap-2">
+                                <span class="badge bg-green-100 text-green-700">Sim → Força Mediana</span>
+                                <span class="badge bg-stone-100 text-stone-500">Não → Passo 2</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="relative pl-12">
+                            <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600 z-10">2</div>
+                            <h4 class="font-bold text-stone-900">Teste de Assimetria (Skewness)</h4>
+                            <p class="text-sm text-stone-600 mt-1">Compara a Média com a Mediana.</p>
+                            <code class="block bg-stone-200 p-2 rounded text-xs mt-2 font-mono">Diff = abs(Média - Mediana) / Mediana</code>
+                            <div class="mt-2 space-y-1">
+                                <div class="text-sm">Se <strong>Diff > 10%</strong>: <span class="badge bg-orange-100 text-orange-700">Detectou Outlier → Usa Mediana</span></div>
+                                <div class="text-sm">Se <strong>Diff ≤ 10%</strong>: <span class="badge bg-blue-100 text-blue-700">Dados Limpos → Usa Média</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="relative pl-12">
+                            <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-600 z-10">3</div>
+                            <h4 class="font-bold text-stone-900">Cálculo de Limites</h4>
+                            <p class="text-sm text-stone-600 mt-1">Aplica o fator <code>k</code> (Sigma) sobre a dispersão.</p>
+                            <div class="mt-2 text-xs bg-stone-800 text-stone-300 p-3 rounded font-mono">
+                                Min = Centro - (k * Dispersão)<br>
+                                Max = Centro + (k * Dispersão)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Math Details -->
+                <div class="p-8">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-6">Detalhes Matemáticos</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h5 class="font-bold text-orange-600 text-sm uppercase mb-2">Escala do MAD</h5>
+                            <p class="text-sm text-stone-600 leading-relaxed">
+                                Para garantir consistência entre os métodos, normalizamos o MAD para ser equivalente a um Desvio Padrão em distribuição normal:
+                            </p>
+                            <code class="block mt-2 p-2 bg-stone-100 rounded border border-stone-200 font-mono text-sm">
+                                Disp = MAD * 1.4826
+                            </code>
+                        </div>
+
+                        <div>
+                            <h5 class="font-bold text-orange-600 text-sm uppercase mb-2">Tratamento de Dispersão Zero</h5>
+                            <p class="text-sm text-stone-600 leading-relaxed">
+                                Se a tabela é constante (ex: tabela de dimensão estática), o desvio é 0. Para evitar falhas por pequenas flutuações, aplicamos uma margem de segurança artificial.
+                            </p>
+                            <code class="block mt-2 p-2 bg-stone-100 rounded border border-stone-200 font-mono text-sm">
+                                if Disp == 0:<br>
+                                &nbsp;&nbsp;Margem = Centro * 0.05 (5%)
+                            </code>
+                        </div>
+
+                        <div class="p-4 bg-orange-50 border border-orange-100 rounded-lg">
+                            <h5 class="font-bold text-orange-800 text-sm mb-1">Nota sobre Time Travel</h5>
+                            <p class="text-xs text-orange-700">
+                                A função usa as tabelas de metadados do Iceberg (`.snapshots`) para ler o volume <strong>exato</strong> que existia na data de processamento, garantindo reprodutibilidade. Tabela tb_registro_volume_tabela.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. SIMULADOR (Interactive) -->
+        <section id="simulator" class="scroll-mt-24">
+            <div class="text-center mb-10">
+                <span class="badge bg-orange-100 text-orange-600 mb-2">Ambiente de Teste</span>
+                <h2 class="text-4xl font-extrabold text-stone-900">Simulador de Algoritmo</h2>
+                <p class="text-stone-600 mt-2">Valide cenários reais antes de colocar em produção.</p>
+            </div>
+
+            <div class="card bg-white shadow-xl overflow-hidden">
+                <div class="grid lg:grid-cols-12">
+                    
+                    <!-- Controls Panel -->
+                    <div class="lg:col-span-4 bg-stone-50 p-6 border-r border-stone-200 flex flex-col gap-6">
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Cenários Rápidos</label>
+                            <select id="presetScenario" class="input-field cursor-pointer font-medium text-stone-700">
+                                <option value="stable">Dados Estáveis (Normal)</option>
+                                <option value="outlier" selected>Com Outlier (Sujeira)</option>
+                                <option value="flat">Constante (Dispersão Zero)</option>
+                                <option value="sparse">Amostra Pequena (N < 5)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Histórico (CSV)</label>
+                            <textarea id="historyInput" rows="3" class="input-field font-mono text-sm">1000, 1020, 980, 5000, 1010</textarea>
+                            <p class="text-xs text-stone-400 mt-1">Ex: Últimas 4 segundas-feiras.</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Método</label>
+                                <select id="methodInput" class="input-field">
+                                    <option value="auto" selected>🤖 Auto</option>
+                                    <option value="median">🛡️ Median</option>
+                                    <option value="mean">🎯 Mean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Sigma (k)</label>
+                                <input type="number" id="kInput" value="3.0" step="0.5" class="input-field">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Valor Hoje</label>
+                            <input type="number" id="currentValue" value="1050" class="input-field font-bold text-stone-900 border-stone-300">
+                        </div>
+
+                        <button id="runSimulation" class="btn-primary w-full shadow-lg transform active:scale-95 transition-all">
+                            Executar Simulação
+                        </button>
+                    </div>
+
+                    <!-- Visualization Panel -->
+                    <div class="lg:col-span-8 p-6 flex flex-col">
+                        <!-- Scorecards -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="p-4 rounded bg-stone-50 border border-stone-200 text-center">
+                                <div class="text-xs text-stone-500 uppercase font-bold">Decisão Auto</div>
+                                <div id="methodIndicator" class="text-lg font-bold text-blue-600 mt-1">--</div>
+                            </div>
+                            <div class="p-4 rounded bg-stone-50 border border-stone-200 text-center">
+                                <div class="text-xs text-stone-500 uppercase font-bold">Limites</div>
+                                <div id="rangeIndicator" class="text-lg font-bold text-stone-800 mt-1">--</div>
+                            </div>
+                            <div class="p-4 rounded bg-stone-50 border border-stone-200 text-center">
+                                <div class="text-xs text-stone-500 uppercase font-bold">Status</div>
+                                <div id="statusIndicator" class="text-lg font-bold text-stone-400 mt-1">--</div>
+                            </div>
+                        </div>
+
+                        <!-- Chart -->
+                        <div class="flex-grow bg-white relative rounded border border-stone-100 p-2">
+                             <div class="chart-container">
+                                <canvas id="simChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Logs -->
+                        <div id="decisionLog" class="mt-4 h-24 overflow-y-auto bg-stone-900 text-green-400 p-3 rounded font-mono text-xs border border-stone-700">
+                            > Sistema pronto.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. IMPLEMENTAÇÃO (Dev Guide) -->
+        <section id="implementation">
+            <div class="mb-8">
+                <span class="text-orange-600 font-bold tracking-wider uppercase text-xs">Guia de Implementação</span>
+                <h2 class="text-3xl font-bold text-stone-900 mt-2">Configuração JSON</h2>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="overflow-hidden rounded-lg border border-stone-200 shadow-sm">
+                    <table class="min-w-full bg-white text-sm">
+                        <thead class="bg-stone-50 border-b border-stone-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left font-bold text-stone-700">Parâmetro</th>
+                                <th class="px-6 py-3 text-left font-bold text-stone-700">Default</th>
+                                <th class="px-6 py-3 text-left font-bold text-stone-700">Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-stone-100">
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-orange-600">method</td>
+                                <td class="px-6 py-4 text-stone-500">"auto"</td>
+                                <td class="px-6 py-4">Recomendado. Deixe o sistema decidir. Opções: 'auto', 'mean', 'median'.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-orange-600">k</td>
+                                <td class="px-6 py-4 text-stone-500">3.0</td>
+                                <td class="px-6 py-4">Sensibilidade (Sigma). 3.0 = 99.7% confiança, 2.0 = 95.4%, 1.0 = 68,3%</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-orange-600">match_day_of_week</td>
+                                <td class="px-6 py-4 text-stone-500">true</td>
+                                <td class="px-6 py-4">Filtra Sazonalidade (Ex: Compara Sábados com Sábados).</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-orange-600">num_occurrences</td>
+                                <td class="px-6 py-4 text-stone-500">None</td>
+                                <td class="px-6 py-4">Número Ocorrências: Padrão 5 dias (se sazonal) ou 31 (se corrido).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="code-block text-xs">
+                    <div class="flex justify-between items-center mb-2 text-stone-500">
+                        <span>pipeline_config.json</span>
+                        <span>JSON</span>
+                    </div>
+<pre>
+"database_filter": "db_hub_bddidev2_raw_dev" ou "db_hub_bddiprd1_raw_prd",
+"table_filter": "tb_registro_volume_tabela",
+"validacoes": {
+    "validacao_volumetria": {
+        "tipo_validacao": "check_anomalia_volumetria",
+        "raise_error": "True",
+        
+        // Parâmetros Opcionais (Defaults são recomendados)
+        "method": "auto",
+        "k": 3.0,
+        "match_day_of_week": true,
+        "num_occurrences": 5
+    }
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-12 mt-20 border-t border-stone-800">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="mb-2 font-bold text-stone-200">Data Quality Platform</p>
+            <p class="text-sm text-stone-600">Baseado no modelo <code>exec_query_anomalia_volumetria</code> | v1.2.0</p>
+        </div>
+    </footer>
+
+    <!-- LOGIC SCRIPT (Updated to match Python exactly) -->
+    <script>
+        // --- DATA & STATE ---
+        const state = {
+            history: [1000, 1020, 980, 5000, 1010], 
+            currentValue: 1050,
+            method: 'auto',
+            k: 3.0
+        };
+
+        const presets = {
+            stable: [1000, 1020, 990, 1010, 1005, 995],
+            outlier: [1000, 1050, 950, 5000, 1010, 980],
+            flat: [1000, 1000, 1000, 1000, 1000],
+            sparse: [1000, 1100, 900]
+        };
+
+        let chartInstance = null;
+
+        // --- MATH FUNCTIONS (Python Equivalents) ---
+
+        const _mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+        const _median = (arr) => {
+            const sorted = [...arr].sort((a, b) => a - b);
+            const n = sorted.length;
+            const mid = Math.floor(n / 2);
+            return n % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2.0 : sorted[mid];
+        };
+
+        // Standard Deviation (Sample, n-1)
+        const _std = (arr, meanVal) => {
+            if (arr.length < 2) return 0.0;
+            const variance = arr.reduce((sum, x) => sum + Math.pow(x - meanVal, 2), 0) / (arr.length - 1);
+            return Math.sqrt(variance);
+        };
+
+        // MAD
+        const _mad = (arr, medianVal) => {
+            const absDevs = arr.map(x => Math.abs(x - medianVal));
+            return _median(absDevs);
+        };
+
+        // --- CORE ALGORITHM ---
+        function calculateLimits() {
+            const history = state.history;
+            const n = history.length;
+            
+            addLog(`-----------------------`);
+            addLog(`Entrada: ${n} registros.`);
+
+            let center = 0;
+            let disp = 0;
+            let minLimit = 0;
+            let maxLimit = 0;
+            let methodUsed = state.method;
+
+            // 1. Check Cold Start
+            if (n === 0) {
+                addLog(`> Histórico vazio. Fallback seguro.`);
+                return { minLimit: 1, maxLimit: 999999, center: 0, finalMethod: "cold_start" };
+            }
+
+            // 2. Auto Logic
+            if (state.method === 'auto') {
+                if (n < 6) {
+                    methodUsed = 'median';
+                    addLog(`> Amostra pequena (${n}). Forçando MEDIANA.`);
+                } else {
+                    const m = _mean(history);
+                    const med = _median(history);
+                    const denom = med !== 0 ? med : 1;
+                    const diffPercent = Math.abs(m - med) / denom;
+
+                    if (diffPercent > 0.10) {
+                        methodUsed = 'median';
+                        addLog(`> Assimetria ${(diffPercent*100).toFixed(1)}% (>10%). Escolhido: MEDIANA.`);
+                    } else {
+                        methodUsed = 'mean';
+                        addLog(`> Assimetria ${(diffPercent*100).toFixed(1)}% (≤10%). Escolhido: MÉDIA.`);
+                    }
+                }
+            } else {
+                addLog(`> Método manual: ${state.method.toUpperCase()}`);
+            }
+
+            // 3. Stats Calculation
+            if (methodUsed === 'mean') {
+                center = _mean(history);
+                disp = _std(history, center);
+            } else {
+                center = _median(history);
+                const madVal = _mad(history, center);
+                disp = madVal * 1.4826;
+                if (methodUsed === 'median') addLog(`> MAD: ${madVal.toFixed(2)} | Disp Ajustada: ${disp.toFixed(2)}`);
+            }
+
+            // 4. Limits Calculation
+            if (disp === 0) {
+                addLog(`> Dispersão Zero. Aplicando margem 5%.`);
+                const safeMargin = Math.max(1, Math.floor(center * 0.05));
+                minLimit = center - safeMargin;
+                maxLimit = center + safeMargin;
+            } else {
+                minLimit = center - (state.k * disp);
+                maxLimit = center + (state.k * disp);
+            }
+
+            // Safety Checks
+            minLimit = Math.max(0, Math.floor(minLimit));
+            maxLimit = Math.max(minLimit, Math.floor(maxLimit));
+
+            addLog(`> Limites Calculados: [${minLimit}, ${maxLimit}]`);
+
+            return { minLimit, maxLimit, center, finalMethod: methodUsed };
+        }
+
+        // --- UI UPDATES ---
+        function addLog(msg) {
+            const log = document.getElementById('decisionLog');
+            const entry = document.createElement('div');
+            entry.textContent = msg;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateUI() {
+            // Calculate
+            const result = calculateLimits();
+            const current = state.currentValue;
+
+            // Indicators
+            const statusEl = document.getElementById('statusIndicator');
+            const rangeEl = document.getElementById('rangeIndicator');
+            const methodEl = document.getElementById('methodIndicator');
+
+            rangeEl.textContent = `${result.minLimit.toLocaleString()} - ${result.maxLimit.toLocaleString()}`;
+            methodEl.textContent = result.finalMethod.toUpperCase();
+            
+            // Status Logic
+            if (current >= result.minLimit && current <= result.maxLimit) {
+                statusEl.innerHTML = "<span class='text-green-600'>✅ APROVADO</span>";
+            } else {
+                statusEl.innerHTML = "<span class='text-red-600'>❌ REPROVADO</span>";
+            }
+
+            updateChart(result);
+        }
+
+        function updateChart(result) {
+            const ctx = document.getElementById('simChart').getContext('2d');
+            
+            const labels = state.history.map((_, i) => `H-${state.history.length - i}`);
+            labels.push("HOJE");
+
+            const dataPoints = [...state.history, state.currentValue];
+            
+            // Bounds
+            const minLine = new Array(dataPoints.length).fill(result.minLimit);
+            const maxLine = new Array(dataPoints.length).fill(result.maxLimit);
+            const centerLine = new Array(dataPoints.length).fill(result.center);
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Limite Max',
+                            data: maxLine,
+                            borderColor: 'rgba(234, 88, 12, 0.4)', 
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false 
+                        },
+                        {
+                            label: 'Limite Min',
+                            data: minLine,
+                            borderColor: 'rgba(234, 88, 12, 0.4)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: {
+                                target: 0, 
+                                above: 'rgba(234, 88, 12, 0.05)' 
+                            }
+                        },
+                        {
+                            label: 'Centro',
+                            data: centerLine,
+                            borderColor: 'rgba(28, 25, 23, 0.3)', // stone-900
+                            borderWidth: 2,
+                            borderDash: [2, 2],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Volume',
+                            data: dataPoints,
+                            borderColor: '#1c1917', 
+                            backgroundColor: '#1c1917',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            pointBackgroundColor: (context) => {
+                                const index = context.dataIndex;
+                                const val = context.dataset.data[index];
+                                if (index === dataPoints.length - 1) {
+                                    return (val >= result.minLimit && val <= result.maxLimit) ? '#16a34a' : '#dc2626';
+                                }
+                                return '#1c1917';
+                            },
+                            pointRadius: (context) => {
+                                return context.dataIndex === dataPoints.length - 1 ? 6 : 4;
+                            }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        },
+                        legend: { position: 'bottom' }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('runSimulation').addEventListener('click', () => {
+            const histStr = document.getElementById('historyInput').value;
+            state.history = histStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+            state.currentValue = parseFloat(document.getElementById('currentValue').value);
+            state.method = document.getElementById('methodInput').value;
+            state.k = parseFloat(document.getElementById('kInput').value);
+            updateUI();
+        });
+
+        document.getElementById('presetScenario').addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (presets[val]) {
+                state.history = [...presets[val]];
+                document.getElementById('historyInput').value = state.history.join(', ');
+                document.getElementById('runSimulation').click();
+            }
+        });
+
+        // Init
+        updateUI();
+
+    </script>
+</body>
+</html>
