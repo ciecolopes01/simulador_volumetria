@@ -231,6 +231,7 @@
                                 <div class="text-sm">Se <strong>Diff > 10%</strong>: <span class="badge bg-orange-100 text-orange-700">Detectou Outlier → Usa Mediana</span></div>
                                 <div class="text-sm">Se <strong>Diff ≤ 10%</strong>: <span class="badge bg-blue-100 text-blue-700">Dados Limpos → Usa Média</span></div>
                             </div>
+                            <p class="text-sm text-stone-600 mt-1">Esta regra protege o indicador contra distorções causadas por valores extremos (outliers). O sistema compara a média simples com o valor central (mediana). Se houver uma discrepância maior que 10% entre eles — indicando que alguns valores muito altos ou muito baixos estão puxando a média — o sistema ignora a média e utiliza o valor central (mediana) para garantir uma representação mais fiel da realidade.</p>
                         </div>
 
                         <!-- Step 3 -->
@@ -713,4 +714,5 @@
 
     </script>
 </body>
+
 </html>
